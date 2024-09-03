@@ -56,10 +56,12 @@ export type GetUserByIdResponse = {
  */
 export async function getUserById(token: string, id: string): Promise<GetUserByIdResponse> {
   return await fetch(`${BASE_URL}/users/${id}`, {
+    // Dirty fix
+    cache: "force-cache",
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
-    }
+    },
   }).then(res => checkStatus(res).json())
 }
 
