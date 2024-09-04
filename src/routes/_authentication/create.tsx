@@ -10,11 +10,14 @@ import {
   Textarea,
   VStack,
 } from "@chakra-ui/react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { MemeEditor } from "../../components/meme-editor";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { MemePictureProps } from "../../components/meme-picture";
 import { Plus, Trash } from "@phosphor-icons/react";
+import { useMutation } from "@tanstack/react-query";
+import { useAuthToken } from "../../contexts/authentication";
+import { createMeme } from "../../api";
 
 export const Route = createFileRoute("/_authentication/create")({
   component: CreateMemePage,
@@ -26,8 +29,70 @@ type Picture = {
 };
 
 function CreateMemePage() {
+  const token = useAuthToken();
+
+  const navigate = useNavigate();
   const [picture, setPicture] = useState<Picture | null>(null);
   const [texts, setTexts] = useState<MemePictureProps["texts"]>([]);
+  const [description, setDescription] = useState('');
+
+  const handleDescriptionChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const textareaValue = event.target?.value;
+    setDescription(textareaValue);
+  }, []);
+
+  const createFormData = useCallback(async () => {
+    if (!picture) {
+      // TODO: Handle error;
+      return;
+    }
+
+    const formData = new FormData();
+
+    formData.append("Description", description);
+
+    const capitalizeFirstLetter = (string: string) => {
+      return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+    texts.forEach((text, index) => {
+      Object.entries(text).forEach(([key, value]) => {
+        let parsedValue = value;
+        if (typeof parsedValue === 'number') {
+          parsedValue = Math.round(parsedValue);
+        }
+        formData.append(`Texts[${index}][${capitalizeFirstLetter(key)}]`, String(parsedValue));
+      })
+    })
+
+    const pictureAsBlob = await fetch(picture.url).then(r => r.blob());
+    formData.append("Picture", pictureAsBlob);
+
+    return formData;
+  }, [picture, description, texts]);
+
+  const { mutate } = useMutation({
+    mutationFn: async () => {
+      const formData = await createFormData();
+
+      if (!formData) {
+        throw new Error('Implement error');
+      }
+
+      await createMeme(token, formData)
+    },
+    onSuccess() {
+      // TODO: Handle navigation
+      navigate({ to: '/' });
+    },
+    onError(error) {
+      // TODO: see with Product what to do on Error flow
+      alert("An error occurred");
+      console.error(error);
+      // Send to Sentry/Whatever the error logs?
+    },
+  });
+
+  const handleSubmit = () => mutate()
 
   const handleDrop = (file: File) => {
     setPicture({
@@ -76,7 +141,10 @@ function CreateMemePage() {
             <Heading as="h2" size="md" mb={2}>
               Describe your meme
             </Heading>
-            <Textarea placeholder="Type your description here..." />
+            <Textarea
+              onChange={handleDescriptionChange}
+              placeholder="Type your description here..."
+            />
           </Box>
         </VStack>
       </Box>
@@ -94,6 +162,7 @@ function CreateMemePage() {
           <VStack>
             {texts.map((text, index) => (
               <Flex width="full">
+                {/* Input is read-only due to implementation */}
                 <Input key={index} value={text.content} mr={1} />
                 <IconButton
                   onClick={() => handleDeleteCaptionButtonClick(index)}
@@ -132,6 +201,7 @@ function CreateMemePage() {
             width="full"
             color="white"
             isDisabled={memePicture === undefined}
+            onClick={handleSubmit}
           >
             Submit
           </Button>

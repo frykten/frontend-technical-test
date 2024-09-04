@@ -133,6 +133,20 @@ export type CreateCommentResponse = {
   memeId: string;
 }
 
+export type CreateMemeResponse = {
+  id: string;
+  authorId: string;
+  pictureUrl: string;
+  description: string;
+  texts: {
+    content: string;
+    x: number;
+    y: number;
+  }[];
+  commentsCount: number;
+  createdAt: string;
+}
+
 /**
  * Create a comment for a meme
  * @param token
@@ -147,5 +161,22 @@ export async function createMemeComment(token: string, memeId: string, content: 
       'Authorization': `Bearer ${token}`
     },
     body: JSON.stringify({ content }),
+  }).then(res => checkStatus(res).json());
+}
+
+/**
+ * Create a meme
+ * @param token
+ * @param picture
+ * @param description
+ * @param texts
+ */
+export async function createMeme(token: string, formData: FormData): Promise<CreateMemeResponse> {
+  return await fetch(`${BASE_URL}/memes`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData,
   }).then(res => checkStatus(res).json());
 }

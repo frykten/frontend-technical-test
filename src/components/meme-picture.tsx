@@ -55,6 +55,7 @@ export const MemePicture: React.FC<MemePictureProps> = ({
       borderRadius={8}
       data-testid={dataTestId}
     >
+      {/* TODO: currently, Captions cannot be moved */}
       {texts.map((text, index) => (
         <Text
           key={index}

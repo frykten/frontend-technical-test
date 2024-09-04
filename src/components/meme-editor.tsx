@@ -66,7 +66,8 @@ export const MemeEditor: React.FC<MemeEditorProps> = ({
       onDrop(files[0]);
     },
     noClick: memePicture !== undefined,
-    accept: { "image/png": [".png"], "image/jpg": [".jpg"] },
+    // Supposedly, following the documentation, image/jpg should be image/jpeg, otherwise not all jpeg types will be supported
+    accept: { "image/png": [".png"], "image/jpeg": [".jpg"] },
   });
 
   return (
