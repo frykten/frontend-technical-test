@@ -115,8 +115,14 @@ export const MemeFeedPage: React.FC = () => {
   }>({});
 
   const { mutate } = useMutation({
-    mutationFn: async (data: { memeId: string; content: string }) => {
-      await createMemeComment(token, data.memeId, data.content);
+    mutationFn: async (data: { memeId: string; content: string, pageIndex: number }) => {
+      const comment = await createMemeComment(token, data.memeId, data.content);
+      // TODO: check with UX if optimistic refresh only or if need to check success/error
+      const memeWithNewComment = memes?.pages[data.pageIndex].memes.find((meme) => meme.id === data.memeId);
+      // TODO: need "invariant" or a library as such to avoid these TS-check errors
+      if (user) {
+        memeWithNewComment?.comments.unshift({ ...comment, author: user });
+      }
     },
   });
 
@@ -133,7 +139,7 @@ export const MemeFeedPage: React.FC = () => {
         divider={<StackDivider border="gray.200" />}
       >
         {/* TODO Add Memoification */}
-        {memes?.pages.map((page) => {
+        {memes?.pages.map((page, pageIndex) => {
           return page.memes.map((meme) => {
             return (
               <VStack key={meme.id} p={4} width="full" align="stretch">
@@ -172,6 +178,9 @@ export const MemeFeedPage: React.FC = () => {
                   <Flex justifyContent="space-between" alignItems="center">
                     <Flex alignItems="center">
                       <LinkOverlay
+                        // Lack of accessibility dirtily fixed
+                        aria-label="Open comments' section"
+                        role="button"
                         data-testid={`meme-comments-section-${meme.id}`}
                         cursor="pointer"
                         onClick={() =>
@@ -202,6 +211,7 @@ export const MemeFeedPage: React.FC = () => {
                           mutate({
                             memeId: meme.id,
                             content: commentContent[meme.id],
+                            pageIndex
                           });
                         }
                       }}
