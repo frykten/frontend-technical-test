@@ -225,7 +225,9 @@ export const MemeFeedPage: React.FC = () => {
                           size="sm"
                           mr={2}
                         />
+                        {/* TODO: Fix uncontrolled to controlled issue */}
                         <Input
+                          aria-label={`Add a comment on meme`}
                           placeholder="Type your comment here..."
                           onChange={(event) => {
                             setCommentContent({
@@ -240,7 +242,7 @@ export const MemeFeedPage: React.FC = () => {
                   </Box>
                   <VStack align="stretch" spacing={4}>
                     {meme.comments.map((comment) => (
-                      <Flex key={comment.id}>
+                      <Flex key={comment.id} data-testid="meme-comment">
                         <Avatar
                           borderWidth="1px"
                           borderColor="gray.300"
